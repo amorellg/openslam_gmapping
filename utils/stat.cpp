@@ -13,12 +13,12 @@ namespace GMapping {
 
 int sampleUniformInt(int max)
 {
-  return (int)(max*(rand()/(RAND_MAX+1.0)));
+  return (int)(max*(drand48()/(RAND_MAX+1.0)));
 }
 
 double sampleUniformDouble(double min, double max)
 {
-  return min + (rand() / (double)RAND_MAX) * (max - min);
+  return min + (drand48() / (double)RAND_MAX) * (max - min);
 }
 
 
@@ -102,7 +102,7 @@ EigenCovariance3::EigenCovariance3(const Covariance3& cov){
 	static gsl_vector * m_eval=NULL;
 	static gsl_vector * m_noise=NULL;
 	static gsl_vector * m_pnoise=NULL;
-	
+
 	if (m_eigenspace==NULL){
 		m_eigenspace=gsl_eigen_symmv_alloc(3);
 		m_cmat=gsl_matrix_alloc(3,3);
@@ -132,13 +132,13 @@ EigenCovariance3 EigenCovariance3::rotate(double angle) const{
 		m_vmat=gsl_matrix_alloc(3,3);
 		m_result=gsl_matrix_alloc(3,3);
 	}
-	
+
 	double c=cos(angle);
 	double s=sin(angle);
 	gsl_matrix_set(m_rmat,0,0, c ); gsl_matrix_set(m_rmat,0,1, -s); gsl_matrix_set(m_rmat,0,2, 0.);
 	gsl_matrix_set(m_rmat,1,0, s ); gsl_matrix_set(m_rmat,1,1,  c); gsl_matrix_set(m_rmat,1,2, 0.);
 	gsl_matrix_set(m_rmat,2,0, 0.); gsl_matrix_set(m_rmat,2,1, 0.); gsl_matrix_set(m_rmat,2,2, 1.);
-	
+
 	for (unsigned int i=0; i<3; i++)
 		for (unsigned int j=0; j<3; j++)
 			gsl_matrix_set(m_vmat,i,j,evec[i][j]);
