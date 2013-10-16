@@ -17,7 +17,7 @@ class RangeSensor: public Sensor{
 			double span;	//spam=0 indicates a line-like beam
 			double maxRange;	//maximum range of the sensor
 			double s,c;		//sinus and cosinus of the beam (optimization);
-		};	
+		};
 		RangeSensor(std::string name);
 		RangeSensor(std::string name, unsigned int beams, double res, const OrientedPoint& position=OrientedPoint(0,0,0), double span=0, double maxrange=89.0);
 		inline const std::vector<Beam>& beams() const {return m_beams;}

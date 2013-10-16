@@ -33,7 +33,8 @@ namespace GMapping {
   */
   class GridSlamProcessor{
   public:
-
+    /**the sensor map*/
+    SensorMap m_sensors;
 
     /**This class defines the the node of reversed tree in which the trajectories are stored.
        Each node of a tree has a pointer to its parent and a counter indicating the number of childs of a node.
@@ -142,6 +143,7 @@ namespace GMapping {
 
     //methods for accessing the parameters
     void setSensorMap(const SensorMap& smap);
+    void setSensorMap(const SensorMap& sensormap, std::string sensorname);
     void init(unsigned int size, double xmin, double ymin, double xmax, double ymax, double delta,
 	      OrientedPoint initialPose=OrientedPoint(0,0,0));
     void setMatchingParameters(double urange, double range, double sigma, int kernsize, double lopt, double aopt,

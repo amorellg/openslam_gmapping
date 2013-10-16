@@ -238,7 +238,6 @@ void GridSlamProcessor::setMotionModelParameters
     node=0;
   }
 
-
   void GridSlamProcessor::setSensorMap(const SensorMap& smap){
 
     /*
@@ -252,6 +251,32 @@ void GridSlamProcessor::setMotionModelParameters
       cerr << "Attempting to load the new carmen log format" << endl;
       laser_it=smap.find(std::string("ROBOTLASER1"));
       assert(laser_it!=smap.end());
+    }
+    const RangeSensor* rangeSensor=dynamic_cast<const RangeSensor*>((laser_it->second));
+    assert(rangeSensor && rangeSensor->beams().size());
+
+    m_beams=static_cast<unsigned int>(rangeSensor->beams().size());
+    double* angles=new double[rangeSensor->beams().size()];
+    for (unsigned int i=0; i<m_beams; i++){
+      angles[i]=rangeSensor->beams()[i].pose.theta;
+    }
+    m_matcher.setLaserParameters(m_beams, angles, rangeSensor->getPose());
+    delete [] angles;
+  }
+
+  void
+  GridSlamProcessor::setSensorMap(const SensorMap& sensormap
+                                 ,std::string sensorname
+                                 )
+  {
+    // Construct the angle table for the sensor.
+    // New version which can manage more than one laser
+
+    SensorMap::const_iterator laser_it=sensormap.find(sensorname);
+    if (laser_it==sensormap.end()){
+      cerr << "Attempting to load the new carmen log format" << endl;
+      laser_it=sensormap.find(std::string("ROBOTLASER1"));
+      assert(laser_it!=sensormap.end());
     }
     const RangeSensor* rangeSensor=dynamic_cast<const RangeSensor*>((laser_it->second));
     assert(rangeSensor && rangeSensor->beams().size());
@@ -315,7 +340,7 @@ void GridSlamProcessor::setMotionModelParameters
 
   bool GridSlamProcessor::processScan(const RangeReading & reading, int adaptParticles){
 
-    /**retireve the position from the reading, and compute the odometry*/
+    /**retrieve the position from the reading, and compute the odometry*/
     OrientedPoint relPose=reading.getPose();
     if (!m_count){
       m_lastPartPose=m_odoPose=relPose;
