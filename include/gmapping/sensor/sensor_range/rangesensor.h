@@ -19,8 +19,10 @@ class RangeSensor: public Sensor{
 			double s,c;		//sinus and cosinus of the beam (optimization);
 		};
 		RangeSensor(std::string name);
-		RangeSensor(std::string name, unsigned int beams, double res, const OrientedPoint& position=OrientedPoint(0,0,0), double span=0, double maxrange=89.0);
+		RangeSensor(std::string name, unsigned int beams, double res, int orientation=1, const OrientedPoint& position=OrientedPoint(0,0,0), double span=0, double maxrange=89.0);
 		inline const std::vector<Beam>& beams() const {return m_beams;}
+		inline const int getOrientation() const {return m_orientation;}
+		inline const double getAngleInc() const {return m_anginc;}
 		inline std::vector<Beam>& beams() {return m_beams;}
 		inline OrientedPoint getPose() const {return m_pose;}
 		void updateBeamsLookup();
@@ -28,6 +30,8 @@ class RangeSensor: public Sensor{
 	protected:
 		OrientedPoint m_pose;
 		std::vector<Beam> m_beams;
+    int m_orientation;
+    double m_anginc;
 };
 
 };
