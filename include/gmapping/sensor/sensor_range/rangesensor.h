@@ -20,9 +20,11 @@ class RangeSensor: public Sensor{
 		};
 		RangeSensor(std::string name);
 		RangeSensor(std::string name, unsigned int beams, double res, int orientation=1, const OrientedPoint& position=OrientedPoint(0,0,0), double span=0, double maxrange=89.0);
+    ~RangeSensor();
 		inline const std::vector<Beam>& beams() const {return m_beams;}
 		inline const int getOrientation() const {return m_orientation;}
 		inline const double getAngleInc() const {return m_anginc;}
+		inline double * getAngles() const {return m_angles;}
 		inline std::vector<Beam>& beams() {return m_beams;}
 		inline OrientedPoint getPose() const {return m_pose;}
 		void updateBeamsLookup();
@@ -32,6 +34,7 @@ class RangeSensor: public Sensor{
 		std::vector<Beam> m_beams;
     int m_orientation;
     double m_anginc;
+    double* m_angles;
 };
 
 };

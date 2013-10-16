@@ -391,7 +391,7 @@ double ScanMatcher::registerScan(ScanMatcherMap& map, const OrientedPoint& p, co
   return esum;
 }
 
-
+#ifdef PLAIN_READINGS
 double ScanMatcher::registerScan(ScanMatcherMap& map, const OrientedPoint& p, const double* readings){
 	if (!m_activeAreaComputed)
 		computeActiveArea(map, p, readings);
@@ -446,6 +446,7 @@ double ScanMatcher::registerScan(ScanMatcherMap& map, const OrientedPoint& p, co
 	//cout  << "informationGain=" << -esum << endl;
 	return esum;
 }
+#endif
 
 /*
 void ScanMatcher::registerScan(ScanMatcherMap& map, const OrientedPoint& p, const double* readings){
