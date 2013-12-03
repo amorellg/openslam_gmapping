@@ -17,8 +17,10 @@ const double m_distanceThresholdCheck = 20;
 
 using namespace std;
 
-  GridSlamProcessor::GridSlamProcessor(): m_infoStream(cout){
-
+  GridSlamProcessor::GridSlamProcessor()
+    : m_infoStream(cout)
+    , m_isInit(false)
+  {
     period_ = 5.0;
     m_obsSigmaGain=1;
     m_resampleThreshold=0.5;
@@ -26,8 +28,11 @@ using namespace std;
   }
 
   GridSlamProcessor::GridSlamProcessor(const GridSlamProcessor& gsp)
-    :last_update_time_(0.0), m_particles(gsp.m_particles), m_infoStream(cout){
-
+    : last_update_time_(0.0)
+    , m_particles(gsp.m_particles)
+    , m_infoStream(cout)
+    , m_isInit(false)
+  {
     period_ = 5.0;
 
     m_obsSigmaGain=gsp.m_obsSigmaGain;
@@ -55,7 +60,6 @@ using namespace std;
     cerr << "m_linearDistance=" << m_linearDistance << endl;
     cerr << "m_angularDistance=" << m_linearDistance << endl;
 
-
     m_xmin=gsp.m_xmin;
     m_ymin=gsp.m_ymin;
     m_xmax=gsp.m_xmax;
@@ -81,18 +85,19 @@ using namespace std;
     cerr <<  "end" << endl;
 #endif
 
-
     cerr  << "Tree: normalizing, resetting and propagating weights within copy construction/cloneing ..." ;
     updateTreeWeights(false);
     cerr  << ".done!" <<endl;
   }
 
-  GridSlamProcessor::GridSlamProcessor(std::ostream& infoS): m_infoStream(infoS){
+  GridSlamProcessor::GridSlamProcessor(std::ostream& infoS)
+    : m_infoStream(infoS)
+    , m_isInit(false)
+  {
     period_ = 5.0;
     m_obsSigmaGain=1;
     m_resampleThreshold=0.5;
     m_minimumScore=0.;
-
   }
 
   GridSlamProcessor* GridSlamProcessor::clone() const {
@@ -326,6 +331,7 @@ void GridSlamProcessor::setMotionModelParameters
     m_count=0;
     m_readingCount=0;
     m_linearDistance=m_angularDistance=0;
+    m_isInit = true;
   }
 
   void GridSlamProcessor::processTruePos(const OdometryReading& o){

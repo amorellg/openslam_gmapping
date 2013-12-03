@@ -33,6 +33,9 @@ namespace GMapping {
   */
   class GridSlamProcessor{
   public:
+    bool m_isInit;
+
+
     /**the sensor map*/
     SensorMap m_sensors;
 
