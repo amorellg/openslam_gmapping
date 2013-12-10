@@ -24,12 +24,14 @@ class RangeSensor: public Sensor{
 		inline const std::vector<Beam>& beams() const {return m_beams;}
 		inline const int getOrientation() const {return m_orientation;}
 		inline const double getAngleInc() const {return m_anginc;}
+		inline const double getMaxRange() const {return m_maxRange;}
 		inline double * getAngles() const {return m_angles;}
 		inline std::vector<Beam>& beams() {return m_beams;}
 		inline OrientedPoint getPose() const {return m_pose;}
 		void updateBeamsLookup();
 		bool newFormat;
 	protected:
+    double m_maxRange;
 		OrientedPoint m_pose;
 		std::vector<Beam> m_beams;
     int m_orientation;

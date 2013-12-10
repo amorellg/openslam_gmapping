@@ -15,6 +15,9 @@
 #include <gmapping/scanmatcher/scanmatcher.h>
 #include "motionmodel.h"
 
+#include "ros/ros.h"
+#include "geometry_msgs/PoseArray.h"
+#include "tf/message_filter.h"
 
 namespace GMapping {
 
@@ -35,6 +38,9 @@ namespace GMapping {
   public:
     bool m_isInit;
 
+    ros::NodeHandle* node_;
+    ros::Publisher particlecloud_pub_;  //to publish gridslamprocessor particles
+    std::string map_frame_;
 
     /**the sensor map*/
     SensorMap m_sensors;
@@ -130,7 +136,7 @@ namespace GMapping {
     typedef std::vector<Particle> ParticleVector;
 
     /** Constructs a GridSlamProcessor, initialized with the default parameters */
-    GridSlamProcessor();
+    GridSlamProcessor(ros::NodeHandle* node, std::string map_frame);
 
     /** Constructs a GridSlamProcessor, whose output is routed to a stream.
      @param infoStr: the output stream
@@ -144,9 +150,11 @@ namespace GMapping {
     /**Deleted the gridslamprocessor*/
     virtual ~GridSlamProcessor();
 
+    void publishParticles();
+
     //methods for accessing the parameters
-    void setSensorMap(const SensorMap& smap);
-    void setSensorMap(const SensorMap& sensormap, std::string sensorname);
+//    void setSensorMap(const SensorMap& smap);
+//    void setSensorMap(const SensorMap& sensormap, std::string sensorname);
     void init(unsigned int size, double xmin, double ymin, double xmax, double ymax, double delta,
 	      OrientedPoint initialPose=OrientedPoint(0,0,0));
     void setMatchingParameters(double urange, double range, double sigma, int kernsize, double lopt, double aopt,
@@ -230,7 +238,7 @@ namespace GMapping {
     MEMBER_PARAM_SET_GET(m_matcher, bool, enlargeStep, protected, public, public);
 
     /**pose of the laser wrt the robot [scanmatcher]*/
-    MEMBER_PARAM_SET_GET(m_matcher, OrientedPoint, laserPose, protected, public, public);
+    //MEMBER_PARAM_SET_GET(m_matcher, OrientedPoint, laserPose, protected, public, public);
 
 
     /**odometry error in translation as a function of translation (rho/rho) [motionmodel]*/

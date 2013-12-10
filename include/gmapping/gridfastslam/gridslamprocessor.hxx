@@ -72,23 +72,22 @@ inline bool GridSlamProcessor::resample(const RangeReading& reading, int adaptSi
   bool hasResampled = false;
 
   TNodeVector oldGeneration;
-  for (unsigned int i=0; i<m_particles.size(); i++){
+  for (unsigned int i=0; i<m_particles.size(); i++)
     oldGeneration.push_back(m_particles[i].node);
-  }
 
-  if (m_neff<m_resampleThreshold*m_particles.size()){
-
+  if (m_neff<m_resampleThreshold*m_particles.size())
+  {
     if (m_infoStream)
       m_infoStream  << "*************RESAMPLE***************" << std::endl;
 
     uniform_resampler<double, double> resampler;
     m_indexes=resampler.resampleIndexes(m_weights, adaptSize);
 
-    if (m_outputStream.is_open()){
+    if (m_outputStream.is_open())
+    {
       m_outputStream << "RESAMPLE "<< m_indexes.size() << " ";
-      for (std::vector<unsigned int>::const_iterator it=m_indexes.begin(); it!=m_indexes.end(); it++){
-	m_outputStream << *it <<  " ";
-      }
+      for (std::vector<unsigned int>::const_iterator it=m_indexes.begin(); it!=m_indexes.end(); it++)
+	      m_outputStream << *it <<  " ";
       m_outputStream << std::endl;
     }
 
@@ -101,12 +100,13 @@ inline bool GridSlamProcessor::resample(const RangeReading& reading, int adaptSi
     //		cerr << "Existing Nodes:" ;
     for (unsigned int i=0; i<m_indexes.size(); i++){
       //			cerr << " " << m_indexes[i];
-      while(j<m_indexes[i]){
-	deletedParticles.push_back(j);
-	j++;
+      while(j<m_indexes[i])
+      {
+        deletedParticles.push_back(j);
+        j++;
 			}
       if (j==m_indexes[i])
-	j++;
+	      j++;
       Particle & p=m_particles[m_indexes[i]];
       TNode* node=0;
       TNode* oldNode=oldGeneration[m_indexes[i]];
@@ -120,7 +120,8 @@ inline bool GridSlamProcessor::resample(const RangeReading& reading, int adaptSi
       temp.back().node=node;
       temp.back().previousIndex=m_indexes[i];
     }
-    while(j<m_indexes.size()){
+    while(j<m_indexes.size())
+    {
       deletedParticles.push_back(j);
       j++;
     }

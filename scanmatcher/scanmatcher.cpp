@@ -13,7 +13,8 @@ using namespace std;
 
 const double ScanMatcher::nullLikelihood=-.5;
 
-ScanMatcher::ScanMatcher(): m_laserPose(0,0,0){
+ScanMatcher::ScanMatcher()//: m_laserPose(0,0,0)
+{
 	//m_laserAngles=0;
 	m_laserBeams=0;
 	m_optRecursiveIterations=3;
@@ -114,106 +115,106 @@ void ScanMatcher::computeActiveArea(ScanMatcherMap& map, const OrientedPoint& p,
 }
 */
 
-#ifdef PLAIN_READINGS
-void ScanMatcher::computeActiveArea(ScanMatcherMap& map, const OrientedPoint& p, const double* readings){
-	if (m_activeAreaComputed)
-		return;
-	OrientedPoint lp=p;
-	lp.x+=cos(p.theta)*m_laserPose.x-sin(p.theta)*m_laserPose.y;
-	lp.y+=sin(p.theta)*m_laserPose.x+cos(p.theta)*m_laserPose.y;
-	lp.theta+=m_laserPose.theta;
-	IntPoint p0=map.world2map(lp);
-
-	Point min(map.map2world(0,0));
-	Point max(map.map2world(map.getMapSizeX()-1,map.getMapSizeY()-1));
-
-	if (lp.x<min.x) min.x=lp.x;
-	if (lp.y<min.y) min.y=lp.y;
-	if (lp.x>max.x) max.x=lp.x;
-	if (lp.y>max.y) max.y=lp.y;
-
-	/*determine the size of the area*/
-	const double * angle=m_laserAngles+m_initialBeamsSkip;
-	for (const double* r=readings+m_initialBeamsSkip; r<readings+m_laserBeams; r++, angle++){
-		if (*r>m_laserMaxRange||*r==0.0||isnan(*r)) continue;
-		double d=*r>m_usableRange?m_usableRange:*r;
-		Point phit=lp;
-		phit.x+=d*cos(lp.theta+*angle);
-		phit.y+=d*sin(lp.theta+*angle);
-		if (phit.x<min.x) min.x=phit.x;
-		if (phit.y<min.y) min.y=phit.y;
-		if (phit.x>max.x) max.x=phit.x;
-		if (phit.y>max.y) max.y=phit.y;
-	}
-	//min=min-Point(map.getDelta(),map.getDelta());
-	//max=max+Point(map.getDelta(),map.getDelta());
-
-	if ( !map.isInside(min)	|| !map.isInside(max)){
-		Point lmin(map.map2world(0,0));
-		Point lmax(map.map2world(map.getMapSizeX()-1,map.getMapSizeY()-1));
-		//cerr << "CURRENT MAP " << lmin.x << " " << lmin.y << " " << lmax.x << " " << lmax.y << endl;
-		//cerr << "BOUNDARY OVERRIDE " << min.x << " " << min.y << " " << max.x << " " << max.y << endl;
-		min.x=( min.x >= lmin.x )? lmin.x: min.x-m_enlargeStep;
-		max.x=( max.x <= lmax.x )? lmax.x: max.x+m_enlargeStep;
-		min.y=( min.y >= lmin.y )? lmin.y: min.y-m_enlargeStep;
-		max.y=( max.y <= lmax.y )? lmax.y: max.y+m_enlargeStep;
-		map.resize(min.x, min.y, max.x, max.y);
-		//cerr << "RESIZE " << min.x << " " << min.y << " " << max.x << " " << max.y << endl;
-	}
-
-	HierarchicalArray2D<PointAccumulator>::PointSet activeArea;
-	/*allocate the active area*/
-	angle=m_laserAngles+m_initialBeamsSkip;
-	for (const double* r=readings+m_initialBeamsSkip; r<readings+m_laserBeams; r++, angle++)
-		if (m_generateMap){
-			double d=*r;
-			if (d>m_laserMaxRange||d==0.0||isnan(d))
-				continue;
-			if (d>m_usableRange)
-				d=m_usableRange;
-			Point phit=lp+Point(d*cos(lp.theta+*angle),d*sin(lp.theta+*angle));
-			IntPoint p0=map.world2map(lp);
-			IntPoint p1=map.world2map(phit);
-
-			//IntPoint linePoints[20000] ;
-			GridLineTraversalLine line;
-			line.points=m_linePoints;
-			GridLineTraversal::gridLine(p0, p1, &line);
-			for (int i=0; i<line.num_points-1; i++){
-				assert(map.isInside(m_linePoints[i]));
-				activeArea.insert(map.storage().patchIndexes(m_linePoints[i]));
-				assert(m_linePoints[i].x>=0 && m_linePoints[i].y>=0);
-			}
-			if (d<m_usableRange){
-				IntPoint cp=map.storage().patchIndexes(p1);
-				assert(cp.x>=0 && cp.y>=0);
-				activeArea.insert(cp);
-			}
-		} else {
-			if (*r>m_laserMaxRange||*r>m_usableRange||*r==0.0||isnan(*r)) continue;
-			Point phit=lp;
-			phit.x+=*r*cos(lp.theta+*angle);
-			phit.y+=*r*sin(lp.theta+*angle);
-			IntPoint p1=map.world2map(phit);
-			assert(p1.x>=0 && p1.y>=0);
-			IntPoint cp=map.storage().patchIndexes(p1);
-			assert(cp.x>=0 && cp.y>=0);
-			activeArea.insert(cp);
-		}
-
-	//this allocates the unallocated cells in the active area of the map
-	//cout << "activeArea::size() " << activeArea.size() << endl;
-/*
-	cerr << "ActiveArea=";
-	for (HierarchicalArray2D<PointAccumulator>::PointSet::const_iterator it=activeArea.begin(); it!= activeArea.end(); it++){
-		cerr << "(" << it->x <<"," << it->y << ") ";
-	}
-	cerr << endl;
-*/
-	map.storage().setActiveArea(activeArea, true);
-	m_activeAreaComputed=true;
-}
-#endif
+//#ifdef PLAIN_READINGS
+//void ScanMatcher::computeActiveArea(ScanMatcherMap& map, const OrientedPoint& p, const double* readings){
+//	if (m_activeAreaComputed)
+//		return;
+//	OrientedPoint lp=p;
+//	lp.x+=cos(p.theta)*m_laserPose.x-sin(p.theta)*m_laserPose.y;
+//	lp.y+=sin(p.theta)*m_laserPose.x+cos(p.theta)*m_laserPose.y;
+//	lp.theta+=m_laserPose.theta;
+//	IntPoint p0=map.world2map(lp);
+//
+//	Point min(map.map2world(0,0));
+//	Point max(map.map2world(map.getMapSizeX()-1,map.getMapSizeY()-1));
+//
+//	if (lp.x<min.x) min.x=lp.x;
+//	if (lp.y<min.y) min.y=lp.y;
+//	if (lp.x>max.x) max.x=lp.x;
+//	if (lp.y>max.y) max.y=lp.y;
+//
+//	/*determine the size of the area*/
+//	const double * angle=m_laserAngles+m_initialBeamsSkip;
+//	for (const double* r=readings+m_initialBeamsSkip; r<readings+m_laserBeams; r++, angle++){
+//		if (*r>m_laserMaxRange||*r==0.0||isnan(*r)) continue;
+//		double d=*r>m_usableRange?m_usableRange:*r;
+//		Point phit=lp;
+//		phit.x+=d*cos(lp.theta+*angle);
+//		phit.y+=d*sin(lp.theta+*angle);
+//		if (phit.x<min.x) min.x=phit.x;
+//		if (phit.y<min.y) min.y=phit.y;
+//		if (phit.x>max.x) max.x=phit.x;
+//		if (phit.y>max.y) max.y=phit.y;
+//	}
+//	//min=min-Point(map.getDelta(),map.getDelta());
+//	//max=max+Point(map.getDelta(),map.getDelta());
+//
+//	if ( !map.isInside(min)	|| !map.isInside(max)){
+//		Point lmin(map.map2world(0,0));
+//		Point lmax(map.map2world(map.getMapSizeX()-1,map.getMapSizeY()-1));
+//		//cerr << "CURRENT MAP " << lmin.x << " " << lmin.y << " " << lmax.x << " " << lmax.y << endl;
+//		//cerr << "BOUNDARY OVERRIDE " << min.x << " " << min.y << " " << max.x << " " << max.y << endl;
+//		min.x=( min.x >= lmin.x )? lmin.x: min.x-m_enlargeStep;
+//		max.x=( max.x <= lmax.x )? lmax.x: max.x+m_enlargeStep;
+//		min.y=( min.y >= lmin.y )? lmin.y: min.y-m_enlargeStep;
+//		max.y=( max.y <= lmax.y )? lmax.y: max.y+m_enlargeStep;
+//		map.resize(min.x, min.y, max.x, max.y);
+//		//cerr << "RESIZE " << min.x << " " << min.y << " " << max.x << " " << max.y << endl;
+//	}
+//
+//	HierarchicalArray2D<PointAccumulator>::PointSet activeArea;
+//	/*allocate the active area*/
+//	angle=m_laserAngles+m_initialBeamsSkip;
+//	for (const double* r=readings+m_initialBeamsSkip; r<readings+m_laserBeams; r++, angle++)
+//		if (m_generateMap){
+//			double d=*r;
+//			if (d>m_laserMaxRange||d==0.0||isnan(d))
+//				continue;
+//			if (d>m_usableRange)
+//				d=m_usableRange;
+//			Point phit=lp+Point(d*cos(lp.theta+*angle),d*sin(lp.theta+*angle));
+//			IntPoint p0=map.world2map(lp);
+//			IntPoint p1=map.world2map(phit);
+//
+//			//IntPoint linePoints[20000] ;
+//			GridLineTraversalLine line;
+//			line.points=m_linePoints;
+//			GridLineTraversal::gridLine(p0, p1, &line);
+//			for (int i=0; i<line.num_points-1; i++){
+//				assert(map.isInside(m_linePoints[i]));
+//				activeArea.insert(map.storage().patchIndexes(m_linePoints[i]));
+//				assert(m_linePoints[i].x>=0 && m_linePoints[i].y>=0);
+//			}
+//			if (d<m_usableRange){
+//				IntPoint cp=map.storage().patchIndexes(p1);
+//				assert(cp.x>=0 && cp.y>=0);
+//				activeArea.insert(cp);
+//			}
+//		} else {
+//			if (*r>m_laserMaxRange||*r>m_usableRange||*r==0.0||isnan(*r)) continue;
+//			Point phit=lp;
+//			phit.x+=*r*cos(lp.theta+*angle);
+//			phit.y+=*r*sin(lp.theta+*angle);
+//			IntPoint p1=map.world2map(phit);
+//			assert(p1.x>=0 && p1.y>=0);
+//			IntPoint cp=map.storage().patchIndexes(p1);
+//			assert(cp.x>=0 && cp.y>=0);
+//			activeArea.insert(cp);
+//		}
+//
+//	//this allocates the unallocated cells in the active area of the map
+//	//cout << "activeArea::size() " << activeArea.size() << endl;
+///*
+//	cerr << "ActiveArea=";
+//	for (HierarchicalArray2D<PointAccumulator>::PointSet::const_iterator it=activeArea.begin(); it!= activeArea.end(); it++){
+//		cerr << "(" << it->x <<"," << it->y << ") ";
+//	}
+//	cerr << endl;
+//*/
+//	map.storage().setActiveArea(activeArea, true);
+//	m_activeAreaComputed=true;
+//}
+//#endif
 
 //new version which uses RangeReading directly
 void ScanMatcher::computeActiveArea(ScanMatcherMap& map, const OrientedPoint& p, const RangeReading& reading){
@@ -391,62 +392,62 @@ double ScanMatcher::registerScan(ScanMatcherMap& map, const OrientedPoint& p, co
   return esum;
 }
 
-#ifdef PLAIN_READINGS
-double ScanMatcher::registerScan(ScanMatcherMap& map, const OrientedPoint& p, const double* readings){
-	if (!m_activeAreaComputed)
-		computeActiveArea(map, p, readings);
-
-	//this operation replicates the cells that will be changed in the registration operation
-	map.storage().allocActiveArea();
-
-	OrientedPoint lp=p;
-	lp.x+=cos(p.theta)*m_laserPose.x-sin(p.theta)*m_laserPose.y;
-	lp.y+=sin(p.theta)*m_laserPose.x+cos(p.theta)*m_laserPose.y;
-	lp.theta+=m_laserPose.theta;
-	IntPoint p0=map.world2map(lp);
-
-
-	const double * angle=m_laserAngles+m_initialBeamsSkip;
-	double esum=0;
-	for (const double* r=readings+m_initialBeamsSkip; r<readings+m_laserBeams; r++, angle++)
-		if (m_generateMap){
-			double d=*r;
-			if (d>m_laserMaxRange||d==0.0||isnan(d))
-				continue;
-			if (d>m_usableRange)
-				d=m_usableRange;
-			Point phit=lp+Point(d*cos(lp.theta+*angle),d*sin(lp.theta+*angle));
-			IntPoint p1=map.world2map(phit);
-			//IntPoint linePoints[20000] ;
-			GridLineTraversalLine line;
-			line.points=m_linePoints;
-			GridLineTraversal::gridLine(p0, p1, &line);
-			for (int i=0; i<line.num_points-1; i++){
-				PointAccumulator& cell=map.cell(line.points[i]);
-				double e=-cell.entropy();
-				cell.update(false, Point(0,0));
-				e+=cell.entropy();
-				esum+=e;
-			}
-			if (d<m_usableRange){
-				double e=-map.cell(p1).entropy();
-				map.cell(p1).update(true, phit);
-				e+=map.cell(p1).entropy();
-				esum+=e;
-			}
-		} else {
-			if (*r>m_laserMaxRange||*r>m_usableRange||*r==0.0||isnan(*r)) continue;
-			Point phit=lp;
-			phit.x+=*r*cos(lp.theta+*angle);
-			phit.y+=*r*sin(lp.theta+*angle);
-			IntPoint p1=map.world2map(phit);
-			assert(p1.x>=0 && p1.y>=0);
-			map.cell(p1).update(true,phit);
-		}
-	//cout  << "informationGain=" << -esum << endl;
-	return esum;
-}
-#endif
+//#ifdef PLAIN_READINGS
+//double ScanMatcher::registerScan(ScanMatcherMap& map, const OrientedPoint& p, const double* readings){
+//	if (!m_activeAreaComputed)
+//		computeActiveArea(map, p, readings);
+//
+//	//this operation replicates the cells that will be changed in the registration operation
+//	map.storage().allocActiveArea();
+//
+//	OrientedPoint lp=p;
+//	lp.x+=cos(p.theta)*m_laserPose.x-sin(p.theta)*m_laserPose.y;
+//	lp.y+=sin(p.theta)*m_laserPose.x+cos(p.theta)*m_laserPose.y;
+//	lp.theta+=m_laserPose.theta;
+//	IntPoint p0=map.world2map(lp);
+//
+//
+//	const double * angle=m_laserAngles+m_initialBeamsSkip;
+//	double esum=0;
+//	for (const double* r=readings+m_initialBeamsSkip; r<readings+m_laserBeams; r++, angle++)
+//		if (m_generateMap){
+//			double d=*r;
+//			if (d>m_laserMaxRange||d==0.0||isnan(d))
+//				continue;
+//			if (d>m_usableRange)
+//				d=m_usableRange;
+//			Point phit=lp+Point(d*cos(lp.theta+*angle),d*sin(lp.theta+*angle));
+//			IntPoint p1=map.world2map(phit);
+//			//IntPoint linePoints[20000] ;
+//			GridLineTraversalLine line;
+//			line.points=m_linePoints;
+//			GridLineTraversal::gridLine(p0, p1, &line);
+//			for (int i=0; i<line.num_points-1; i++){
+//				PointAccumulator& cell=map.cell(line.points[i]);
+//				double e=-cell.entropy();
+//				cell.update(false, Point(0,0));
+//				e+=cell.entropy();
+//				esum+=e;
+//			}
+//			if (d<m_usableRange){
+//				double e=-map.cell(p1).entropy();
+//				map.cell(p1).update(true, phit);
+//				e+=map.cell(p1).entropy();
+//				esum+=e;
+//			}
+//		} else {
+//			if (*r>m_laserMaxRange||*r>m_usableRange||*r==0.0||isnan(*r)) continue;
+//			Point phit=lp;
+//			phit.x+=*r*cos(lp.theta+*angle);
+//			phit.y+=*r*sin(lp.theta+*angle);
+//			IntPoint p1=map.world2map(phit);
+//			assert(p1.x>=0 && p1.y>=0);
+//			map.cell(p1).update(true,phit);
+//		}
+//	//cout  << "informationGain=" << -esum << endl;
+//	return esum;
+//}
+//#endif
 
 /*
 void ScanMatcher::registerScan(ScanMatcherMap& map, const OrientedPoint& p, const double* readings){
@@ -497,15 +498,15 @@ void ScanMatcher::registerScan(ScanMatcherMap& map, const OrientedPoint& p, cons
 
 */
 
-double ScanMatcher::icpOptimize(OrientedPoint& pnew, const ScanMatcherMap& map, const OrientedPoint& init, const double* readings) const{
+double ScanMatcher::icpOptimize(OrientedPoint& pnew, const ScanMatcherMap& map, const OrientedPoint& init, const RangeReading& reading) const{
 	double currentScore;
-	double sc=score(map, init, readings);;
+	double sc=score(map, init, reading);
 	OrientedPoint start=init;
 	pnew=init;
 	int iterations=0;
 	do{
 		currentScore=sc;
-		sc=icpStep(pnew, map, start, readings);
+		sc=icpStep(pnew, map, start, reading);
 		//cerr << "pstart=" << start.x << " " <<start.y << " " << start.theta << endl;
 		//cerr << "pret=" << pnew.x << " " <<pnew.y << " " << pnew.theta << endl;
 		start=pnew;
@@ -515,91 +516,91 @@ double ScanMatcher::icpOptimize(OrientedPoint& pnew, const ScanMatcherMap& map, 
 	return currentScore;
 }
 
-#ifdef PLAIN_READINGS
-double ScanMatcher::optimize(OrientedPoint& pnew, const ScanMatcherMap& map, const OrientedPoint& init, const double* readings) const{
-	double bestScore=-1;
-	OrientedPoint currentPose=init;
-	double currentScore=score(map, currentPose, readings);
-	double adelta=m_optAngularDelta, ldelta=m_optLinearDelta;
-	unsigned int refinement=0;
-	enum Move{Front, Back, Left, Right, TurnLeft, TurnRight, Done};
-/*	cout << __PRETTY_FUNCTION__<<  " readings: ";
-	for (int i=0; i<m_laserBeams; i++){
-		cout << readings[i] << " ";
-	}
-	cout << endl;
-*/	int c_iterations=0;
-	do{
-		if (bestScore>=currentScore){
-			refinement++;
-			adelta*=.5;
-			ldelta*=.5;
-		}
-		bestScore=currentScore;
-//		cout <<"score="<< currentScore << " refinement=" << refinement;
-//		cout <<  "pose=" << currentPose.x  << " " << currentPose.y << " " << currentPose.theta << endl;
-		OrientedPoint bestLocalPose=currentPose;
-		OrientedPoint localPose=currentPose;
-
-		Move move=Front;
-		do {
-			localPose=currentPose;
-			switch(move){
-				case Front:
-					localPose.x+=ldelta;
-					move=Back;
-					break;
-				case Back:
-					localPose.x-=ldelta;
-					move=Left;
-					break;
-				case Left:
-					localPose.y-=ldelta;
-					move=Right;
-					break;
-				case Right:
-					localPose.y+=ldelta;
-					move=TurnLeft;
-					break;
-				case TurnLeft:
-					localPose.theta+=adelta;
-					move=TurnRight;
-					break;
-				case TurnRight:
-					localPose.theta-=adelta;
-					move=Done;
-					break;
-				default:;
-			}
-
-			double odo_gain=1;
-			if (m_angularOdometryReliability>0.){
-				double dth=init.theta-localPose.theta; 	dth=atan2(sin(dth), cos(dth)); 	dth*=dth;
-				odo_gain*=exp(-m_angularOdometryReliability*dth);
-			}
-			if (m_linearOdometryReliability>0.){
-				double dx=init.x-localPose.x;
-				double dy=init.y-localPose.y;
-				double drho=dx*dx+dy*dy;
-				odo_gain*=exp(-m_linearOdometryReliability*drho);
-			}
-			double localScore=odo_gain*score(map, localPose, readings);
-
-			if (localScore>currentScore){
-				currentScore=localScore;
-				bestLocalPose=localPose;
-			}
-			c_iterations++;
-		} while(move!=Done);
-		currentPose=bestLocalPose;
-//		cout << "currentScore=" << currentScore<< endl;
-		//here we look for the best move;
-	}while (currentScore>bestScore || refinement<m_optRecursiveIterations);
-	//cout << __PRETTY_FUNCTION__ << "bestScore=" << bestScore<< endl;
-	//cout << __PRETTY_FUNCTION__ << "iterations=" << c_iterations<< endl;
-	pnew=currentPose;
-	return bestScore;
-}
+//#ifdef PLAIN_READINGS
+//double ScanMatcher::optimize(OrientedPoint& pnew, const ScanMatcherMap& map, const OrientedPoint& init, const double* readings) const{
+//	double bestScore=-1;
+//	OrientedPoint currentPose=init;
+//	double currentScore=score(map, currentPose, readings);
+//	double adelta=m_optAngularDelta, ldelta=m_optLinearDelta;
+//	unsigned int refinement=0;
+//	enum Move{Front, Back, Left, Right, TurnLeft, TurnRight, Done};
+///*	cout << __PRETTY_FUNCTION__<<  " readings: ";
+//	for (int i=0; i<m_laserBeams; i++){
+//		cout << readings[i] << " ";
+//	}
+//	cout << endl;
+//*/	int c_iterations=0;
+//	do{
+//		if (bestScore>=currentScore){
+//			refinement++;
+//			adelta*=.5;
+//			ldelta*=.5;
+//		}
+//		bestScore=currentScore;
+////		cout <<"score="<< currentScore << " refinement=" << refinement;
+////		cout <<  "pose=" << currentPose.x  << " " << currentPose.y << " " << currentPose.theta << endl;
+//		OrientedPoint bestLocalPose=currentPose;
+//		OrientedPoint localPose=currentPose;
+//
+//		Move move=Front;
+//		do {
+//			localPose=currentPose;
+//			switch(move){
+//				case Front:
+//					localPose.x+=ldelta;
+//					move=Back;
+//					break;
+//				case Back:
+//					localPose.x-=ldelta;
+//					move=Left;
+//					break;
+//				case Left:
+//					localPose.y-=ldelta;
+//					move=Right;
+//					break;
+//				case Right:
+//					localPose.y+=ldelta;
+//					move=TurnLeft;
+//					break;
+//				case TurnLeft:
+//					localPose.theta+=adelta;
+//					move=TurnRight;
+//					break;
+//				case TurnRight:
+//					localPose.theta-=adelta;
+//					move=Done;
+//					break;
+//				default:;
+//			}
+//
+//			double odo_gain=1;
+//			if (m_angularOdometryReliability>0.){
+//				double dth=init.theta-localPose.theta; 	dth=atan2(sin(dth), cos(dth)); 	dth*=dth;
+//				odo_gain*=exp(-m_angularOdometryReliability*dth);
+//			}
+//			if (m_linearOdometryReliability>0.){
+//				double dx=init.x-localPose.x;
+//				double dy=init.y-localPose.y;
+//				double drho=dx*dx+dy*dy;
+//				odo_gain*=exp(-m_linearOdometryReliability*drho);
+//			}
+//			double localScore=odo_gain*score(map, localPose, readings);
+//
+//			if (localScore>currentScore){
+//				currentScore=localScore;
+//				bestLocalPose=localPose;
+//			}
+//			c_iterations++;
+//		} while(move!=Done);
+//		currentPose=bestLocalPose;
+////		cout << "currentScore=" << currentScore<< endl;
+//		//here we look for the best move;
+//	}while (currentScore>bestScore || refinement<m_optRecursiveIterations);
+//	//cout << __PRETTY_FUNCTION__ << "bestScore=" << bestScore<< endl;
+//	//cout << __PRETTY_FUNCTION__ << "iterations=" << c_iterations<< endl;
+//	pnew=currentPose;
+//	return bestScore;
+//}
 
 struct ScoredMove{
 	OrientedPoint pose;
@@ -609,134 +610,134 @@ struct ScoredMove{
 
 typedef std::list<ScoredMove> ScoredMoveList;
 
-double ScanMatcher::optimize(OrientedPoint& _mean, ScanMatcher::CovarianceMatrix& _cov, const ScanMatcherMap& map, const OrientedPoint& init, const double* readings) const{
-	ScoredMoveList moveList;
-	double bestScore=-1;
-	OrientedPoint currentPose=init;
-	ScoredMove sm={currentPose,0,0};
-	unsigned int matched=likelihoodAndScore(sm.score, sm.likelihood, map, currentPose, readings);
-	double currentScore=sm.score;
-	moveList.push_back(sm);
-	double adelta=m_optAngularDelta, ldelta=m_optLinearDelta;
-	unsigned int refinement=0;
-	int count=0;
-	enum Move{Front, Back, Left, Right, TurnLeft, TurnRight, Done};
-	do{
-		if (bestScore>=currentScore){
-			refinement++;
-			adelta*=.5;
-			ldelta*=.5;
-		}
-		bestScore=currentScore;
-//		cout <<"score="<< currentScore << " refinement=" << refinement;
-//		cout <<  "pose=" << currentPose.x  << " " << currentPose.y << " " << currentPose.theta << endl;
-		OrientedPoint bestLocalPose=currentPose;
-		OrientedPoint localPose=currentPose;
-
-		Move move=Front;
-		do {
-			localPose=currentPose;
-			switch(move){
-				case Front:
-					localPose.x+=ldelta;
-					move=Back;
-					break;
-				case Back:
-					localPose.x-=ldelta;
-					move=Left;
-					break;
-				case Left:
-					localPose.y-=ldelta;
-					move=Right;
-					break;
-				case Right:
-					localPose.y+=ldelta;
-					move=TurnLeft;
-					break;
-				case TurnLeft:
-					localPose.theta+=adelta;
-					move=TurnRight;
-					break;
-				case TurnRight:
-					localPose.theta-=adelta;
-					move=Done;
-					break;
-				default:;
-			}
-			double localScore, localLikelihood;
-
-			double odo_gain=1;
-			if (m_angularOdometryReliability>0.){
-				double dth=init.theta-localPose.theta; 	dth=atan2(sin(dth), cos(dth)); 	dth*=dth;
-				odo_gain*=exp(-m_angularOdometryReliability*dth);
-			}
-			if (m_linearOdometryReliability>0.){
-				double dx=init.x-localPose.x;
-				double dy=init.y-localPose.y;
-				double drho=dx*dx+dy*dy;
-				odo_gain*=exp(-m_linearOdometryReliability*drho);
-			}
-			localScore=odo_gain*score(map, localPose, readings);
-			//update the score
-			count++;
-			matched=likelihoodAndScore(localScore, localLikelihood, map, localPose, readings);
-			if (localScore>currentScore){
-				currentScore=localScore;
-				bestLocalPose=localPose;
-			}
-			sm.score=localScore;
-			sm.likelihood=localLikelihood;//+log(odo_gain);
-			sm.pose=localPose;
-			moveList.push_back(sm);
-			//update the move list
-		} while(move!=Done);
-		currentPose=bestLocalPose;
-		//cout << __PRETTY_FUNCTION__ << "currentScore=" << currentScore<< endl;
-		//here we look for the best move;
-	}while (currentScore>bestScore || refinement<m_optRecursiveIterations);
-	//cout << __PRETTY_FUNCTION__ << "bestScore=" << bestScore<< endl;
-	//cout << __PRETTY_FUNCTION__ << "iterations=" << count<< endl;
-
-	//normalize the likelihood
-	double lmin=1e9;
-	double lmax=-1e9;
-	for (ScoredMoveList::const_iterator it=moveList.begin(); it!=moveList.end(); it++){
-		lmin=it->likelihood<lmin?it->likelihood:lmin;
-		lmax=it->likelihood>lmax?it->likelihood:lmax;
-	}
-	//cout << "lmin=" << lmin << " lmax=" << lmax<< endl;
-	for (ScoredMoveList::iterator it=moveList.begin(); it!=moveList.end(); it++){
-		it->likelihood=exp(it->likelihood-lmax);
-		//cout << "l=" << it->likelihood << endl;
-	}
-	//compute the mean
-	OrientedPoint mean(0,0,0);
-	double lacc=0;
-	for (ScoredMoveList::const_iterator it=moveList.begin(); it!=moveList.end(); it++){
-		mean=mean+it->pose*it->likelihood;
-		lacc+=it->likelihood;
-	}
-	mean=mean*(1./lacc);
-	//OrientedPoint delta=mean-currentPose;
-	//cout << "delta.x=" << delta.x << " delta.y=" << delta.y << " delta.theta=" << delta.theta << endl;
-	CovarianceMatrix cov={0.,0.,0.,0.,0.,0.};
-	for (ScoredMoveList::const_iterator it=moveList.begin(); it!=moveList.end(); it++){
-		OrientedPoint delta=it->pose-mean;
-		delta.theta=atan2(sin(delta.theta), cos(delta.theta));
-		cov.xx+=delta.x*delta.x*it->likelihood;
-		cov.yy+=delta.y*delta.y*it->likelihood;
-		cov.tt+=delta.theta*delta.theta*it->likelihood;
-		cov.xy+=delta.x*delta.y*it->likelihood;
-		cov.xt+=delta.x*delta.theta*it->likelihood;
-		cov.yt+=delta.y*delta.theta*it->likelihood;
-	}
-	cov.xx/=lacc, cov.xy/=lacc, cov.xt/=lacc, cov.yy/=lacc, cov.yt/=lacc, cov.tt/=lacc;
-
-	_mean=currentPose;
-	_cov=cov;
-	return bestScore;
-}
-#endif
+//double ScanMatcher::optimize(OrientedPoint& _mean, ScanMatcher::CovarianceMatrix& _cov, const ScanMatcherMap& map, const OrientedPoint& init, const double* readings) const{
+//	ScoredMoveList moveList;
+//	double bestScore=-1;
+//	OrientedPoint currentPose=init;
+//	ScoredMove sm={currentPose,0,0};
+//	unsigned int matched=likelihoodAndScore(sm.score, sm.likelihood, map, currentPose, readings);
+//	double currentScore=sm.score;
+//	moveList.push_back(sm);
+//	double adelta=m_optAngularDelta, ldelta=m_optLinearDelta;
+//	unsigned int refinement=0;
+//	int count=0;
+//	enum Move{Front, Back, Left, Right, TurnLeft, TurnRight, Done};
+//	do{
+//		if (bestScore>=currentScore){
+//			refinement++;
+//			adelta*=.5;
+//			ldelta*=.5;
+//		}
+//		bestScore=currentScore;
+////		cout <<"score="<< currentScore << " refinement=" << refinement;
+////		cout <<  "pose=" << currentPose.x  << " " << currentPose.y << " " << currentPose.theta << endl;
+//		OrientedPoint bestLocalPose=currentPose;
+//		OrientedPoint localPose=currentPose;
+//
+//		Move move=Front;
+//		do {
+//			localPose=currentPose;
+//			switch(move){
+//				case Front:
+//					localPose.x+=ldelta;
+//					move=Back;
+//					break;
+//				case Back:
+//					localPose.x-=ldelta;
+//					move=Left;
+//					break;
+//				case Left:
+//					localPose.y-=ldelta;
+//					move=Right;
+//					break;
+//				case Right:
+//					localPose.y+=ldelta;
+//					move=TurnLeft;
+//					break;
+//				case TurnLeft:
+//					localPose.theta+=adelta;
+//					move=TurnRight;
+//					break;
+//				case TurnRight:
+//					localPose.theta-=adelta;
+//					move=Done;
+//					break;
+//				default:;
+//			}
+//			double localScore, localLikelihood;
+//
+//			double odo_gain=1;
+//			if (m_angularOdometryReliability>0.){
+//				double dth=init.theta-localPose.theta; 	dth=atan2(sin(dth), cos(dth)); 	dth*=dth;
+//				odo_gain*=exp(-m_angularOdometryReliability*dth);
+//			}
+//			if (m_linearOdometryReliability>0.){
+//				double dx=init.x-localPose.x;
+//				double dy=init.y-localPose.y;
+//				double drho=dx*dx+dy*dy;
+//				odo_gain*=exp(-m_linearOdometryReliability*drho);
+//			}
+//			localScore=odo_gain*score(map, localPose, readings);
+//			//update the score
+//			count++;
+//			matched=likelihoodAndScore(localScore, localLikelihood, map, localPose, readings);
+//			if (localScore>currentScore){
+//				currentScore=localScore;
+//				bestLocalPose=localPose;
+//			}
+//			sm.score=localScore;
+//			sm.likelihood=localLikelihood;//+log(odo_gain);
+//			sm.pose=localPose;
+//			moveList.push_back(sm);
+//			//update the move list
+//		} while(move!=Done);
+//		currentPose=bestLocalPose;
+//		//cout << __PRETTY_FUNCTION__ << "currentScore=" << currentScore<< endl;
+//		//here we look for the best move;
+//	}while (currentScore>bestScore || refinement<m_optRecursiveIterations);
+//	//cout << __PRETTY_FUNCTION__ << "bestScore=" << bestScore<< endl;
+//	//cout << __PRETTY_FUNCTION__ << "iterations=" << count<< endl;
+//
+//	//normalize the likelihood
+//	double lmin=1e9;
+//	double lmax=-1e9;
+//	for (ScoredMoveList::const_iterator it=moveList.begin(); it!=moveList.end(); it++){
+//		lmin=it->likelihood<lmin?it->likelihood:lmin;
+//		lmax=it->likelihood>lmax?it->likelihood:lmax;
+//	}
+//	//cout << "lmin=" << lmin << " lmax=" << lmax<< endl;
+//	for (ScoredMoveList::iterator it=moveList.begin(); it!=moveList.end(); it++){
+//		it->likelihood=exp(it->likelihood-lmax);
+//		//cout << "l=" << it->likelihood << endl;
+//	}
+//	//compute the mean
+//	OrientedPoint mean(0,0,0);
+//	double lacc=0;
+//	for (ScoredMoveList::const_iterator it=moveList.begin(); it!=moveList.end(); it++){
+//		mean=mean+it->pose*it->likelihood;
+//		lacc+=it->likelihood;
+//	}
+//	mean=mean*(1./lacc);
+//	//OrientedPoint delta=mean-currentPose;
+//	//cout << "delta.x=" << delta.x << " delta.y=" << delta.y << " delta.theta=" << delta.theta << endl;
+//	CovarianceMatrix cov={0.,0.,0.,0.,0.,0.};
+//	for (ScoredMoveList::const_iterator it=moveList.begin(); it!=moveList.end(); it++){
+//		OrientedPoint delta=it->pose-mean;
+//		delta.theta=atan2(sin(delta.theta), cos(delta.theta));
+//		cov.xx+=delta.x*delta.x*it->likelihood;
+//		cov.yy+=delta.y*delta.y*it->likelihood;
+//		cov.tt+=delta.theta*delta.theta*it->likelihood;
+//		cov.xy+=delta.x*delta.y*it->likelihood;
+//		cov.xt+=delta.x*delta.theta*it->likelihood;
+//		cov.yt+=delta.y*delta.theta*it->likelihood;
+//	}
+//	cov.xx/=lacc, cov.xy/=lacc, cov.xt/=lacc, cov.yy/=lacc, cov.yt/=lacc, cov.tt/=lacc;
+//
+//	_mean=currentPose;
+//	_cov=cov;
+//	return bestScore;
+//}
+//#endif
 
 //new version which uses RangeReading directly
 double ScanMatcher::optimize(OrientedPoint& pnew, const ScanMatcherMap& map, const OrientedPoint& init,  const RangeReading& reading) const{
@@ -820,21 +821,152 @@ double ScanMatcher::optimize(OrientedPoint& pnew, const ScanMatcherMap& map, con
   return bestScore;
 }
 
-void ScanMatcher::setLaserParameters
-	(unsigned int beams, double* angles, const OrientedPoint& lpose){
-	/*if (m_laserAngles)
-		delete [] m_laserAngles;
-	*/
-	assert(beams<LASER_MAXBEAMS);
-	m_laserPose=lpose;
-	m_laserBeams=beams;
-	//m_laserAngles=new double[beams];
-	memcpy(m_laserAngles, angles, sizeof(double)*m_laserBeams);
+//new version which uses RangeReading directly
+double ScanMatcher::optimize(OrientedPoint& _mean, ScanMatcher::CovarianceMatrix& _cov, const ScanMatcherMap& map, const OrientedPoint& init, const RangeReading& reading) const{
+	ScoredMoveList moveList;
+	double bestScore=-1;
+	OrientedPoint currentPose=init;
+	ScoredMove sm={currentPose,0,0};
+	unsigned int matched=likelihoodAndScore(sm.score, sm.likelihood, map, currentPose, reading);
+	double currentScore=sm.score;
+	moveList.push_back(sm);
+	double adelta=m_optAngularDelta, ldelta=m_optLinearDelta;
+	unsigned int refinement=0;
+	int count=0;
+	enum Move{Front, Back, Left, Right, TurnLeft, TurnRight, Done};
+	do{
+		if (bestScore>=currentScore){
+			refinement++;
+			adelta*=.5;
+			ldelta*=.5;
+		}
+		bestScore=currentScore;
+//		cout <<"score="<< currentScore << " refinement=" << refinement;
+//		cout <<  "pose=" << currentPose.x  << " " << currentPose.y << " " << currentPose.theta << endl;
+		OrientedPoint bestLocalPose=currentPose;
+		OrientedPoint localPose=currentPose;
+
+		Move move=Front;
+		do {
+			localPose=currentPose;
+			switch(move){
+				case Front:
+					localPose.x+=ldelta;
+					move=Back;
+					break;
+				case Back:
+					localPose.x-=ldelta;
+					move=Left;
+					break;
+				case Left:
+					localPose.y-=ldelta;
+					move=Right;
+					break;
+				case Right:
+					localPose.y+=ldelta;
+					move=TurnLeft;
+					break;
+				case TurnLeft:
+					localPose.theta+=adelta;
+					move=TurnRight;
+					break;
+				case TurnRight:
+					localPose.theta-=adelta;
+					move=Done;
+					break;
+				default:;
+			}
+			double localScore, localLikelihood;
+
+			double odo_gain=1;
+			if (m_angularOdometryReliability>0.){
+				double dth=init.theta-localPose.theta; 	dth=atan2(sin(dth), cos(dth)); 	dth*=dth;
+				odo_gain*=exp(-m_angularOdometryReliability*dth);
+			}
+			if (m_linearOdometryReliability>0.){
+				double dx=init.x-localPose.x;
+				double dy=init.y-localPose.y;
+				double drho=dx*dx+dy*dy;
+				odo_gain*=exp(-m_linearOdometryReliability*drho);
+			}
+			localScore=odo_gain*score(map, localPose, reading);
+			//update the score
+			count++;
+			matched=likelihoodAndScore(localScore, localLikelihood, map, localPose, reading);
+			if (localScore>currentScore){
+				currentScore=localScore;
+				bestLocalPose=localPose;
+			}
+			sm.score=localScore;
+			sm.likelihood=localLikelihood;//+log(odo_gain);
+			sm.pose=localPose;
+			moveList.push_back(sm);
+			//update the move list
+		} while(move!=Done);
+		currentPose=bestLocalPose;
+		//cout << __PRETTY_FUNCTION__ << "currentScore=" << currentScore<< endl;
+		//here we look for the best move;
+	}while (currentScore>bestScore || refinement<m_optRecursiveIterations);
+	//cout << __PRETTY_FUNCTION__ << "bestScore=" << bestScore<< endl;
+	//cout << __PRETTY_FUNCTION__ << "iterations=" << count<< endl;
+
+	//normalize the likelihood
+	double lmin=1e9;
+	double lmax=-1e9;
+	for (ScoredMoveList::const_iterator it=moveList.begin(); it!=moveList.end(); it++){
+		lmin=it->likelihood<lmin?it->likelihood:lmin;
+		lmax=it->likelihood>lmax?it->likelihood:lmax;
+	}
+	//cout << "lmin=" << lmin << " lmax=" << lmax<< endl;
+	for (ScoredMoveList::iterator it=moveList.begin(); it!=moveList.end(); it++){
+		it->likelihood=exp(it->likelihood-lmax);
+		//cout << "l=" << it->likelihood << endl;
+	}
+	//compute the mean
+	OrientedPoint mean(0,0,0);
+	double lacc=0;
+	for (ScoredMoveList::const_iterator it=moveList.begin(); it!=moveList.end(); it++){
+		mean=mean+it->pose*it->likelihood;
+		lacc+=it->likelihood;
+	}
+	mean=mean*(1./lacc);
+	//OrientedPoint delta=mean-currentPose;
+	//cout << "delta.x=" << delta.x << " delta.y=" << delta.y << " delta.theta=" << delta.theta << endl;
+	CovarianceMatrix cov={0.,0.,0.,0.,0.,0.};
+	for (ScoredMoveList::const_iterator it=moveList.begin(); it!=moveList.end(); it++){
+		OrientedPoint delta=it->pose-mean;
+		delta.theta=atan2(sin(delta.theta), cos(delta.theta));
+		cov.xx+=delta.x*delta.x*it->likelihood;
+		cov.yy+=delta.y*delta.y*it->likelihood;
+		cov.tt+=delta.theta*delta.theta*it->likelihood;
+		cov.xy+=delta.x*delta.y*it->likelihood;
+		cov.xt+=delta.x*delta.theta*it->likelihood;
+		cov.yt+=delta.y*delta.theta*it->likelihood;
+	}
+	cov.xx/=lacc, cov.xy/=lacc, cov.xt/=lacc, cov.yy/=lacc, cov.yt/=lacc, cov.tt/=lacc;
+
+	_mean=currentPose;
+	_cov=cov;
+	return bestScore;
 }
 
 
+//void ScanMatcher::setLaserParameters
+//	(unsigned int beams, double* angles, const OrientedPoint& lpose){
+//	/*if (m_laserAngles)
+//		delete [] m_laserAngles;
+//	*/
+//	assert(beams<LASER_MAXBEAMS);
+//	//m_laserPose=lpose;
+//	m_laserBeams=beams;
+//	//m_laserAngles=new double[beams];
+//	memcpy(m_laserAngles, angles, sizeof(double)*m_laserBeams);
+//}
+
+
+//new version which uses RangeReading directly
 double ScanMatcher::likelihood
-	(double& _lmax, OrientedPoint& _mean, CovarianceMatrix& _cov, const ScanMatcherMap& map, const OrientedPoint& p, const double* readings){
+	(double& _lmax, OrientedPoint& _mean, CovarianceMatrix& _cov, const ScanMatcherMap& map, const OrientedPoint& p, const RangeReading& reading){
 	ScoredMoveList moveList;
 
 	for (double xx=-m_llsamplerange; xx<=m_llsamplerange; xx+=m_llsamplestep)
@@ -849,7 +981,7 @@ double ScanMatcher::likelihood
 		ScoredMove sm;
 		sm.pose=rp;
 
-		likelihoodAndScore(sm.score, sm.likelihood, map, rp, readings);
+		likelihoodAndScore(sm.score, sm.likelihood, map, rp, reading);
 		moveList.push_back(sm);
 	}
 
@@ -900,9 +1032,10 @@ double ScanMatcher::likelihood
 	return log(lcum)+lmax;
 }
 
+//new version which uses RangeReading directly
 double ScanMatcher::likelihood
 	(double& _lmax, OrientedPoint& _mean, CovarianceMatrix& _cov, const ScanMatcherMap& map, const OrientedPoint& p,
-	Gaussian3& odometry, const double* readings, double gain){
+	Gaussian3& odometry, const RangeReading& reading, double gain){
 	ScoredMoveList moveList;
 
 
@@ -918,7 +1051,7 @@ double ScanMatcher::likelihood
 		ScoredMove sm;
 		sm.pose=rp;
 
-		likelihoodAndScore(sm.score, sm.likelihood, map, rp, readings);
+		likelihoodAndScore(sm.score, sm.likelihood, map, rp, reading);
 		sm.likelihood+=odometry.eval(rp)/gain;
 		assert(!isnan(sm.likelihood));
 		moveList.push_back(sm);
