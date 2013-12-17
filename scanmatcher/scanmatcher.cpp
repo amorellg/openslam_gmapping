@@ -222,11 +222,11 @@ void ScanMatcher::computeActiveArea(ScanMatcherMap& map, const OrientedPoint& p,
     return;
   OrientedPoint lp=p;
 
-    //extracting data from de rangeSensor pointed by the RangeReading
-    const RangeSensor *rangeSensor = dynamic_cast<const RangeSensor*>(reading.getSensor());
-    double laserPoseX = rangeSensor->getPose().x;
-    double laserPoseY = rangeSensor->getPose().y;
-    double laserPoseTheta = rangeSensor->getPose().theta;
+  //extracting data from de rangeSensor pointed by the RangeReading
+  const RangeSensor *rangeSensor = dynamic_cast<const RangeSensor*>(reading.getSensor());
+  double laserPoseX = rangeSensor->getPose().x;
+  double laserPoseY = rangeSensor->getPose().y;
+  double laserPoseTheta = rangeSensor->getPose().theta;
 
   lp.x+=cos(p.theta)*laserPoseX-sin(p.theta)*laserPoseY;
   lp.y+=sin(p.theta)*laserPoseX+cos(p.theta)*laserPoseY;
@@ -245,13 +245,15 @@ void ScanMatcher::computeActiveArea(ScanMatcherMap& map, const OrientedPoint& p,
   /*determine the size of the area*/
   //const double * angle=m_laserAngles+m_initialBeamsSkip;
   //for (const double* r=readings+m_initialBeamsSkip; r<readings+m_laserBeams; r++, angle++){
-    std::vector<RangeSensor::Beam> beams = rangeSensor->beams();
-    for (unsigned int i = m_initialBeamsSkip; i < beams.size(); i++) {
+  std::vector<RangeSensor::Beam> beams = rangeSensor->beams();
+  for (unsigned int i = m_initialBeamsSkip; i < beams.size(); i++)
+  {
     //if (*r>m_laserMaxRange||*r==0.0) continue;
-        double currAngle = beams[i].pose.theta;
-        double currRay = reading[i];
-        //const double * angle=m_laserAngles+m_initialBeamsSkip;
-    if (currRay > m_laserMaxRange || currRay ==0.0) continue;
+    double currAngle = beams[i].pose.theta;
+    double currRay = reading[i];
+    //const double * angle=m_laserAngles+m_initialBeamsSkip;
+    if (currRay > m_laserMaxRange || currRay ==0.0)
+      continue;
 
     double d= currRay > m_usableRange?m_usableRange: currRay;
     Point phit=lp;
@@ -266,7 +268,8 @@ void ScanMatcher::computeActiveArea(ScanMatcherMap& map, const OrientedPoint& p,
   //min=min-Point(map.getDelta(),map.getDelta());
   //max=max+Point(map.getDelta(),map.getDelta());
 
-  if ( !map.isInside(min)  || !map.isInside(max)){
+  if ( !map.isInside(min)  || !map.isInside(max))
+  {
     Point lmin(map.map2world(0,0));
     Point lmax(map.map2world(map.getMapSizeX()-1,map.getMapSizeY()-1));
     //cerr << "CURRENT MAP " << lmin.x << " " << lmin.y << " " << lmax.x << " " << lmax.y << endl;
@@ -283,11 +286,13 @@ void ScanMatcher::computeActiveArea(ScanMatcherMap& map, const OrientedPoint& p,
   /*allocate the active area*/
   //angle=m_laserAngles+m_initialBeamsSkip;
   //for (const double* r=readings+m_initialBeamsSkip; r<readings+m_laserBeams; r++, angle++)
-    for (unsigned int i = m_initialBeamsSkip; i < beams.size(); i++) {
-        double currAngle = beams[i].pose.theta;
-        double currRay = reading[i];
-    if (m_generateMap){
-      double d= currRay ;
+  for (unsigned int i = m_initialBeamsSkip; i < beams.size(); i++)
+  {
+    double currAngle = beams[i].pose.theta;
+    double currRay = reading[i];
+    if (m_generateMap)
+    {
+      double d= currRay;
       if (d>m_laserMaxRange||d==0.0)
         continue;
       if (d>m_usableRange)
@@ -299,28 +304,33 @@ void ScanMatcher::computeActiveArea(ScanMatcherMap& map, const OrientedPoint& p,
       GridLineTraversalLine line;
       line.points=m_linePoints;
       GridLineTraversal::gridLine(p0, p1, &line);
-      for (int i=0; i<line.num_points-1; i++){
+      for (int i=0; i<line.num_points-1; i++)
+      {
         assert(map.isInside(m_linePoints[i]));
         activeArea.insert(map.storage().patchIndexes(m_linePoints[i]));
         assert(m_linePoints[i].x>=0 && m_linePoints[i].y>=0);
       }
-      if (d<m_usableRange){
+      if (d<m_usableRange)
+      {
         IntPoint cp=map.storage().patchIndexes(p1);
         assert(cp.x>=0 && cp.y>=0);
         activeArea.insert(cp);
       }
-    } else {
-      if ( currRay >m_laserMaxRange|| currRay >m_usableRange|| currRay ==0.0) continue;
+    }
+    else
+    {
+      if ( currRay >m_laserMaxRange|| currRay >m_usableRange|| currRay ==0.0)
+        continue;
       Point phit=lp;
-            phit.x+= currRay * cos(lp.theta+ currAngle );
-            phit.y+= currRay * sin(lp.theta+ currAngle );
+      phit.x+= currRay * cos(lp.theta+ currAngle );
+      phit.y+= currRay * sin(lp.theta+ currAngle );
       IntPoint p1=map.world2map(phit);
       assert(p1.x>=0 && p1.y>=0);
       IntPoint cp=map.storage().patchIndexes(p1);
       assert(cp.x>=0 && cp.y>=0);
       activeArea.insert(cp);
     }
-    }
+  }
 
   map.storage().setActiveArea(activeArea, true);
   m_activeAreaComputed=true;
@@ -335,26 +345,27 @@ double ScanMatcher::registerScan(ScanMatcherMap& map, const OrientedPoint& p, co
   map.storage().allocActiveArea();
 
   OrientedPoint lp=p;
-    //extracting data from de rangeSensor pointed by the RangeReading
-    const RangeSensor *rangeSensor = dynamic_cast<const RangeSensor*>(reading.getSensor());
-    double laserPoseX = rangeSensor->getPose().x;
-    double laserPoseY = rangeSensor->getPose().y;
-    double laserPoseTheta = rangeSensor->getPose().theta;
+  //extracting data from de rangeSensor pointed by the RangeReading
+  const RangeSensor *rangeSensor = dynamic_cast<const RangeSensor*>(reading.getSensor());
+  double laserPoseX = rangeSensor->getPose().x;
+  double laserPoseY = rangeSensor->getPose().y;
+  double laserPoseTheta = rangeSensor->getPose().theta;
   lp.x+=cos(p.theta)*laserPoseX-sin(p.theta)*laserPoseY;
   lp.y+=sin(p.theta)*laserPoseX+cos(p.theta)*laserPoseY;
   lp.theta+=laserPoseTheta;
 
   IntPoint p0=map.world2map(lp);
 
-
   //const double * angle=m_laserAngles+m_initialBeamsSkip;
   double esum=0;
   //for (const double* r=readings+m_initialBeamsSkip; r<readings+m_laserBeams; r++, angle++)
-    std::vector<RangeSensor::Beam> beams = rangeSensor->beams();
-    for (unsigned int i = m_initialBeamsSkip; i < beams.size(); i++) {
-        double currAngle = beams[i].pose.theta;
-        double currRay = reading[i];
-    if (m_generateMap){
+  std::vector<RangeSensor::Beam> beams = rangeSensor->beams();
+  for (unsigned int i = m_initialBeamsSkip; i < beams.size(); i++)
+  {
+    double currAngle = beams[i].pose.theta;
+    double currRay = reading[i];
+    if (m_generateMap)
+    {
       double d= currRay;
       if (d>m_laserMaxRange||d==0.0)
         continue;
@@ -365,29 +376,34 @@ double ScanMatcher::registerScan(ScanMatcherMap& map, const OrientedPoint& p, co
       GridLineTraversalLine line;
       line.points=m_linePoints;
       GridLineTraversal::gridLine(p0, p1, &line);
-      for (int i=0; i<line.num_points-1; i++){
+      for (int i=0; i<line.num_points-1; i++)
+      {
         PointAccumulator& cell=map.cell(line.points[i]);
         double e=-cell.entropy();
         cell.update(false, Point(0,0));
         e+=cell.entropy();
         esum+=e;
       }
-      if (d<m_usableRange){
+      if (d<m_usableRange)
+      {
         double e=-map.cell(p1).entropy();
         map.cell(p1).update(true, phit);
         e+=map.cell(p1).entropy();
         esum+=e;
       }
-    } else {
-      if (currRay >m_laserMaxRange|| currRay >m_usableRange|| currRay ==0.0) continue;
+    }
+    else
+    {
+      if (currRay >m_laserMaxRange|| currRay >m_usableRange|| currRay ==0.0)
+        continue;
       Point phit=lp;
-            phit.x+= currRay * cos(lp.theta+ currAngle );
-            phit.y+= currRay * sin(lp.theta+ currAngle );
+      phit.x+= currRay * cos(lp.theta+ currAngle );
+      phit.y+= currRay * sin(lp.theta+ currAngle );
       IntPoint p1=map.world2map(phit);
       assert(p1.x>=0 && p1.y>=0);
       map.cell(p1).update(true,phit);
     }
-    }
+  }
   //cout  << "informationGain=" << -esum << endl;
   return esum;
 }

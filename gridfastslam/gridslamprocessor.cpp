@@ -437,9 +437,9 @@ void GridSlamProcessor::setMotionModelParameters
 		                 << "update ld=" << m_linearDistance << " ad="
                      << m_angularDistance << endl;
 
-      cerr << "Laser Pose= " << reading.getPose().x << " "
-           << reading.getPose().y  << " "
-           << reading.getPose().theta << endl;
+//      cerr << "Laser Pose= " << reading.getPose().x << " "
+//           << reading.getPose().y  << " "
+//           << reading.getPose().theta << endl;
 
       //this is for converting the reading in a scan-matcher feedable form
 //      assert(reading.size()==m_beams);
@@ -449,10 +449,11 @@ void GridSlamProcessor::setMotionModelParameters
       m_infoStream << "m_count " << m_count << endl;
 
       RangeReading* reading_copy =
-              new RangeReading(reading.size(),
-                               &(reading[0]),
-                               static_cast<const RangeSensor*>(reading.getSensor()),
-                               reading.getTime());
+              new RangeReading( reading.size()
+                              , &(reading[0])
+                              , static_cast<const RangeSensor*>(reading.getSensor())
+                              , reading.getTime()
+                              );
 
       if (m_count>0)
       {
@@ -460,20 +461,20 @@ void GridSlamProcessor::setMotionModelParameters
         if (m_outputStream.is_open())
         {
           m_outputStream << "LASER_READING "<< reading.size() << " ";
-       	  m_outputStream << setiosflags(ios::fixed) << setprecision(2);
-       	  for (RangeReading::const_iterator b=reading.begin(); b!=reading.end(); b++)
-       	    m_outputStream << *b << " ";
-       	  OrientedPoint p=reading.getPose();
-       	  m_outputStream << setiosflags(ios::fixed) << setprecision(6);
-       	  m_outputStream << p.x << " " << p.y << " " << p.theta << " " << reading.getTime()<< endl;
-       	  m_outputStream << "SM_UPDATE "<< m_particles.size() << " ";
+          m_outputStream << setiosflags(ios::fixed) << setprecision(2);
+          for (RangeReading::const_iterator b=reading.begin(); b!=reading.end(); b++)
+            m_outputStream << *b << " ";
+          OrientedPoint p=reading.getPose();
+          m_outputStream << setiosflags(ios::fixed) << setprecision(6);
+          m_outputStream << p.x << " " << p.y << " " << p.theta << " " << reading.getTime()<< endl;
+          m_outputStream << "SM_UPDATE "<< m_particles.size() << " ";
        	  for (ParticleVector::const_iterator it=m_particles.begin(); it!=m_particles.end(); it++)
-           {
-       	    const OrientedPoint& pose=it->pose;
-       	    m_outputStream << setiosflags(ios::fixed) << setprecision(3) <<  pose.x << " " << pose.y << " ";
-       	    m_outputStream << setiosflags(ios::fixed) << setprecision(6) <<  pose.theta << " " << it-> weight << " ";
-       	  }
-       	  m_outputStream << endl;
+          {
+            const OrientedPoint& pose=it->pose;
+            m_outputStream << setiosflags(ios::fixed) << setprecision(3) <<  pose.x << " " << pose.y << " ";
+            m_outputStream << setiosflags(ios::fixed) << setprecision(6) <<  pose.theta << " " << it-> weight << " ";
+          }
+          m_outputStream << endl;
        	}
         onScanmatchUpdate();
 

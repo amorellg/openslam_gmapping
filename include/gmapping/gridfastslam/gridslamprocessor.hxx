@@ -14,15 +14,16 @@ inline void GridSlamProcessor::scanMatch(const RangeReading& reading){
     OrientedPoint corrected;
     double score, l, s;
     score=m_matcher.optimize(corrected, it->map, it->pose, reading);
+//    score=m_matcher.icpOptimize(corrected, it->map, it->pose, reading);
     //    it->pose=corrected;
     if (score>m_minimumScore){
       it->pose=corrected;
     } else {
-	if (m_infoStream){
-	  m_infoStream << "Scan Matching Failed, using odometry. Likelihood=" << l <<std::endl;
-	  m_infoStream << "lp:" << m_lastPartPose.x << " "  << m_lastPartPose.y << " "<< m_lastPartPose.theta <<std::endl;
-	  m_infoStream << "op:" << m_odoPose.x << " " << m_odoPose.y << " "<< m_odoPose.theta <<std::endl;
-	}
+      if (m_infoStream){
+        m_infoStream << "Scan Matching Failed, using odometry. Likelihood=" << l <<std::endl;
+        m_infoStream << "lp:" << m_lastPartPose.x << " "  << m_lastPartPose.y << " "<< m_lastPartPose.theta <<std::endl;
+        m_infoStream << "op:" << m_odoPose.x << " " << m_odoPose.y << " "<< m_odoPose.theta <<std::endl;
+      }
     }
 
     m_matcher.likelihoodAndScore(s, l, it->map, it->pose, reading);

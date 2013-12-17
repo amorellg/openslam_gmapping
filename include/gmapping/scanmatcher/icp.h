@@ -22,7 +22,7 @@ double icpStep(OrientedPoint & retval, const PointPairContainer& container){
 	mean.first=mean.first*(1./size);
 	mean.second=mean.second*(1./size);
 	double sxx=0, sxy=0, syx=0, syy=0;
-	
+
 	for (ContainerIterator it=container.begin(); it!=container.end(); it++){
 		PointPair mf=std::make_pair(it->first-mean.first, it->second-mean.second);
 		sxx+=mf.first.x*mf.second.x;
@@ -34,14 +34,14 @@ double icpStep(OrientedPoint & retval, const PointPairContainer& container){
 	double s=sin(retval.theta), c=cos(retval.theta);
 	retval.x=mean.second.x-(c*mean.first.x-s*mean.first.y);
 	retval.y=mean.second.y-(s*mean.first.x+c*mean.first.y);
-	
+
 	double error=0;
 	for (ContainerIterator it=container.begin(); it!=container.end(); it++){
 		Point delta(
 			c*it->first.x-s*it->first.y+retval.x-it->second.x, s*it->first.x+c*it->first.y+retval.y-it->second.y);
 		error+=delta*delta;
 	}
-	return error;	
+	return error;
 }
 
 template <typename PointPairContainer>
@@ -54,10 +54,10 @@ double icpNonlinearStep(OrientedPoint & retval, const PointPairContainer& contai
 		mean.second=mean.second+it->second;
 		size++;
 	}
-	
+
 	mean.first=mean.first*(1./size);
 	mean.second=mean.second*(1./size);
-	
+
 	double ms=0,mc=0;
 	for (ContainerIterator it=container.begin(); it!=container.end(); it++){
 		PointPair mf=std::make_pair(it->first-mean.first, it->second-mean.second);
@@ -70,14 +70,14 @@ double icpNonlinearStep(OrientedPoint & retval, const PointPairContainer& contai
 	double s=sin(retval.theta), c=cos(retval.theta);
 	retval.x=mean.second.x-(c*mean.first.x-s*mean.first.y);
 	retval.y=mean.second.y-(s*mean.first.x+c*mean.first.y);
-	
+
 	double error=0;
 	for (ContainerIterator it=container.begin(); it!=container.end(); it++){
 		Point delta(
 			c*it->first.x-s*it->first.y+retval.x-it->second.x, s*it->first.x+c*it->first.y+retval.y-it->second.y);
 		error+=delta*delta;
 	}
-	return error;	
+	return error;
 }
 
 }//end namespace
